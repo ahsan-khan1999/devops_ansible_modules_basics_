@@ -1,0 +1,130 @@
+---
+- hosts: localhost
+  vars:
+    - count: 0
+    # - home: /home/ahsan
+  tasks:
+  
+    - name: Print variables
+      debug:
+        msg: "Username: {{ count }}"
+- hosts: localhost
+  tasks:
+  - name: Create multiple files
+    file: 
+      path: ~/Documents/"{{ item }}"
+      state: touch
+    with_items:
+    - test01.txt
+    - test02.txt
+    - test03.txt
+  - name: Adding content to file
+    ansible.builtin.lineinfile:
+      dest: ~/Documents/"test01.txt"
+    # regexp: '^SELINUX='
+      line: This is first file made by Your Name
+  - name: Adding content to file
+    ansible.builtin.lineinfile:
+      dest: ~/Documents/"test02.txt"
+    # regexp: '^SELINUX='
+      line: This is Second file made by Ahsan Khan
+  - name: Adding content to file
+    ansible.builtin.lineinfile:
+      dest: ~/Documents/"test03.txt"
+    # regexp: '^SELINUX='
+      line: This is Third file made by Ahsan Khan
+- hosts: localhost
+  vars:
+    - number: 0
+- hosts: localhost
+  tasks:
+  - name: Creating an single file
+    file:
+      path: "~/Documents/checksums.txt"
+      state: touch
+  # - name: Get sha256 sum of file
+  #   stat:
+  #     path: ~/Documents/"file01.txt"
+  #     checksum_algorithm: sha256
+  #     get_checksum: yes
+  #   register: shan
+  - name: Get sha256sum of file1
+    stat:
+      path: ~/Documents/"test01.txt"
+      checksum_algorithm: sha256
+      get_checksum: yes
+    register: sha1
+  - name: Get sha256sum of file2
+    stat:
+      path: ~/Documents/"test02.txt"
+      checksum_algorithm: sha256
+      get_checksum: yes
+    register: sha2
+  - name: Get sha256sum of file3
+    stat:
+      path: ~/Documents/"test03.txt"
+      checksum_algorithm: sha256
+      get_checksum: yes
+    register: sha3
+  - name: insert sha
+    lineinfile:
+      path: ~/Documents/checksums.txt
+      line: "{{ item.line }}"
+    with_items:
+      - line: "{{ sha1.stat.checksum }}"
+      - line: "{{ sha2.stat.checksum }}"
+      - line: "{{ sha3.stat.checksum }}"
+- hosts: localhost
+  tasks:
+  - name: Ansible zip multiple files
+    
+    archive:
+      path:
+        - ~/Documents/"test01.txt"
+        - ~/Documents/"test02.txt"
+        - ~/Documents/"test03.txt"
+        - ~/Documents/checksums.txt
+      dest: ~/Documents/allFiles.zip
+      format: zip
+    
+  - name: Extract allFiles.zip into AllFiles
+    ansible.builtin.unarchive:
+      src: ~/Documents/allFiles.zip
+      dest: ~/Documents/UnZipFiles/
+
+  # - name: Remove file (delete file)
+  #   file:
+  #     state: absent
+  #     path: ~/Documents/allFiles.zip/checksums.txt
+
+- hosts: localhost
+  tasks:
+  - name: Ansible delete file glob
+    find:
+      paths: ~/Documents/UnZipFiles/
+      patterns: "*.txt"
+    register: files_to_delete
+
+  - name: Ansible remove file 
+    file:
+      path: "{{ item.path }}"
+      state: absent
+    with_items: "{{ files_to_delete.files }}"
+  - name: copy html file
+    copy: src=/home/ahsan/Documents/ansible_assignment dest=/home/ahsan/Documents/CopyFolder/
+  - name: Ansible zip multiple folders
+    
+    archive:
+      path:
+        - /home/ahsan/Documents/CopyFolder/
+        - /home/ahsan/Documents/ansible_assignment/
+      dest: ~/Documents/compilled.zip
+      format: zip
+
+  - name: Removing
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - /home/ahsan/Documents/CopyFolder/ansible-assignment/playbook-01.yml
+      
